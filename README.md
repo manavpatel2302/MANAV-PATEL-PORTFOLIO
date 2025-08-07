@@ -78,6 +78,3 @@ For questions, suggestions, or collaboration, please reach out via the contact d
 
 *Disclaimer: This portfolio is intended solely for professional and demonstrative purposes. Content and images are the property of Manav Patel unless credited otherwise.*
 
-[1] https://manavpatel.me
-[2] https://github.com/manavpatel2302/MANAV-PATEL-PORTFOLIO
-[3] https://github.com/mpat247
