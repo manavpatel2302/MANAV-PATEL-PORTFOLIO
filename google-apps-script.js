@@ -1,8 +1,13 @@
 // Google Apps Script for Contact Form to Google Sheets
-// Deploy this script to collect contact form responses
+// Deploy this script as a Web App to collect contact form responses
 
 function doPost(e) {
   try {
+    // Ensure event object and postData exist
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("No POST data received. Ensure you are calling this via a POST request.");
+    }
+
     // Parse the incoming data from the POST request
     const data = JSON.parse(e.postData.contents);
 
@@ -79,7 +84,7 @@ function doGet(e) {
   ).setMimeType(ContentService.MimeType.TEXT);
 }
 
-// Function to test the script (optional)
+// Function to test the script locally (safe execution in editor)
 function testScript() {
   const testData = {
     name: "Test User",
@@ -97,6 +102,7 @@ function testScript() {
     },
   };
 
+  // Call doPost with mockEvent
   const result = doPost(mockEvent);
-  console.log("Test result:", result);
+  Logger.log("Test result: " + result.getContent());
 }
