@@ -36,10 +36,10 @@ angular
         $scope.showThankYou = false;
         // Hide Bootstrap modal
         const modal = bootstrap.Modal.getInstance(
-            document.getElementById("thankYouModal")
+          document.getElementById("thankYouModal")
         );
         if (modal) {
-            modal.hide();
+          modal.hide();
         }
       };
 
@@ -87,26 +87,38 @@ angular
           platform: navigator.platform,
         };
 
-        // Serialize the data to a JSON string and set the content type to text/plain to avoid CORS preflight issues.
+        // Serialize the data to a JSON string
         const payload = JSON.stringify(requestData);
 
         // Make the HTTP POST request
         $http.post(googleScriptUrl, payload, {
             headers: {
-              'Content-Type': 'text/plain;charset=utf-8',
+              'Content-Type': 'application/json',
             },
           })
           .then(function(response) {
             // Success callback
             $scope.isSubmitting = false;
             $scope.showThankYou = true;
+            if (!$scope.$$phase) {
+              $scope.$apply();
+            }
+            const modalElement = document.getElementById("thankYouModal");
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
             $scope.formData = {}; // Clear form
+            $scope.formErrors = {};
           })
           .catch(function(error) {
             // Error callback
             $scope.isSubmitting = false;
             console.error("Error submitting form:", error);
             $window.alert("Failed to send message. Please try again later.");
+          })
+          .finally(function() {
+            $scope.isSubmitting = false;
           });
       };
     },
