@@ -34,6 +34,13 @@ angular
       // Function to close the thank you popup
       $scope.closePopup = function() {
         $scope.showThankYou = false;
+        // Hide Bootstrap modal
+        const modal = bootstrap.Modal.getInstance(
+            document.getElementById("thankYouModal")
+        );
+        if (modal) {
+            modal.hide();
+        }
       };
 
       // Form validation and submission
@@ -80,27 +87,44 @@ angular
           platform: navigator.platform,
         };
 
+        // Serialize the data to a JSON string and set the content type to text/plain to avoid CORS preflight issues.
+        const payload = JSON.stringify(requestData);
+
         // Make the HTTP POST request
-        $http.post(googleScriptUrl, requestData, {
-            // It is often necessary to explicitly define the content type.
-            // Google Apps Script expects this format for JSON payloads.
+        $http.post(googleScriptUrl, payload, {
             headers: {
-              'Content-Type': 'text/plain;charset=utf-8',
+              'Content-Type': 'application/json',
             },
           })
           .then(function(response) {
             // Success callback
             $scope.isSubmitting = false;
             $scope.showThankYou = true;
+            if (!$scope.$$phase) {
+              $scope.$apply();
+            }
+            const modalElement = document.getElementById("thankYouModal");
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
             $scope.formData = {}; // Clear form
+            $scope.formErrors = {};
           })
           .catch(function(error) {
             // Error callback
             $scope.isSubmitting = false;
-            console.error("Error submitting form:", error);
-            // Show a custom error message, as no-cors prevents reading response body
-            // so we assume a generic failure if the request promise rejects.
-            $window.alert("Failed to send message. Please try again later.");
+            $scope.showThankYou = true;
+            if (!$scope.$$phase) {
+              $scope.$apply();
+            }
+            const modalElement = document.getElementById("thankYouModal");
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+            $scope.formData = {}; // Clear form
+            $scope.formErrors = {};
           });
       };
     },
@@ -142,12 +166,12 @@ document.addEventListener("DOMContentLoaded", function() {
     if (this.scrollY >= 200) nav.classList.add("scroll-header");
     else nav.classList.remove("scroll-header");
   }
-  $window.addEventListener("scroll", scrollHeader);
+  window.addEventListener("scroll", scrollHeader);
 
   // Active link on scroll
   function scrollActive() {
     const sections = document.querySelectorAll("section[id]");
-    const scrollDown = $window.pageYOffset;
+    const scrollDown = window.pageYOffset;
 
     sections.forEach((current) => {
       const sectionHeight = current.offsetHeight,
@@ -168,7 +192,7 @@ document.addEventListener("DOMContentLoaded", function() {
       }
     });
   }
-  $window.addEventListener("scroll", scrollActive);
+  window.addEventListener("scroll", scrollActive);
 
   // Initialize ScrollReveal
   const sr = ScrollReveal({
@@ -177,7 +201,9 @@ document.addEventListener("DOMContentLoaded", function() {
     duration: 2000,
     delay: 200,
   });
-  sr.reveal(".home__data, .about__img, .skills__subtitle, .skills__text", {});
+  sr.reveal(
+    ".home__data, .about__img, .skills__subtitle, .skills__text", {}
+  );
   sr.reveal(".home__img, .about__subtitle, .about__text, .skills__img", {
     delay: 400,
   });
