@@ -6,15 +6,16 @@ angular
   .controller("PortfolioController", [
     "$scope",
     "$http",
-    function ($scope, $http) {
+    "$window",
+    function($scope, $http, $window) {
       // Navigation menu toggle
-      $scope.toggleMenu = function () {
+      $scope.toggleMenu = function() {
         const nav = document.getElementById("nav-menu");
         nav.classList.toggle("show");
       };
 
       // Close menu when a link is clicked
-      $scope.closeMenu = function () {
+      $scope.closeMenu = function() {
         const navMenu = document.getElementById("nav-menu");
         navMenu.classList.remove("show");
       };
@@ -30,11 +31,16 @@ angular
       $scope.isSubmitting = false;
       $scope.showThankYou = false;
 
+      // Function to close the thank you popup
+      $scope.closePopup = function() {
+        $scope.showThankYou = false;
+      };
+
       // Form validation and submission
-      $scope.submitForm = function () {
+      $scope.submitForm = function() {
         // Validation regex
         const nameRegex = /^[A-Za-z\s]{2,}$/;
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
         // Reset errors
         $scope.formErrors = {};
@@ -43,158 +49,142 @@ angular
         if (!$scope.formData.name) {
           $scope.formErrors.name = "Name is required.";
         } else if (!nameRegex.test($scope.formData.name)) {
-          $scope.formErrors.name =
-            "Please enter a valid name (letters and spaces, min 2 characters).";
+          $scope.formErrors.name = "Name must be at least 2 characters long and contain only letters and spaces.";
         }
-
         if (!$scope.formData.email) {
           $scope.formErrors.email = "Email is required.";
         } else if (!emailRegex.test($scope.formData.email)) {
           $scope.formErrors.email = "Please enter a valid email address.";
         }
-
         if (!$scope.formData.message) {
           $scope.formErrors.message = "Message is required.";
-        } else if ($scope.formData.message.length < 10) {
-          $scope.formErrors.message =
-            "Message must be at least 10 characters long.";
         }
 
-        // If no errors, proceed with submission
-        if (Object.keys($scope.formErrors).length === 0) {
-          $scope.isSubmitting = true;
-          const payload = {
-            name: $scope.formData.name,
-            email: $scope.formData.email,
-            message: $scope.formData.message,
-            submittedAt: new Date().toISOString(),
-            timestamp: new Date().toLocaleString(),
-            userAgent: navigator.userAgent,
-            platform: navigator.platform,
-          };
-
-          // First, save to localStorage as backup
-          try {
-            const existingData = JSON.parse(
-              localStorage.getItem("contactFormData") || "[]"
-            );
-            existingData.push(payload);
-            localStorage.setItem(
-              "contactFormData",
-              JSON.stringify(existingData)
-            );
-          } catch (e) {
-            // ignore localStorage errors
-          }
-
-          // Google Apps Script endpoint for saving to Google Sheets
-          // You'll need to replace this with your actual deployed script URL
-          const googleScriptUrl ="https://script.google.com/macros/s/AKfycbwL5zXQHNI0UN-bsXDJcaBOhl9lq5-DPFPd6czyAuPH30ekEQO_hpxykYE8IaaYfRla/exec";
-
-          // Try to send to Google Sheets
-          $http.post(googleScriptUrl, payload, {
-              headers: {
-                "Content-Type": "application/json",
-              },
-              timeout: 15000,
-            })
-            .then(function (response) {
-              // Show thank you modal using Bootstrap
-              $scope.showThankYou = true;
-              if (!$scope.$$phase) {
-                $scope.$apply();
-              }
-              // Trigger Bootstrap modal
-              const modalElement = document.getElementById("thankYouModal");
-              if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-              }
-              // Reset form
-              $scope.formData = { name: "", email: "", message: "" };
-              // Reset errors
-              $scope.formErrors = {};
-            })
-            .catch(function (error) {
-              // Show thank you modal even if Google Sheets fails
-              // Data is still saved locally as backup
-              $scope.showThankYou = true;
-              if (!$scope.$$phase) {
-                $scope.$apply();
-              }
-              // Trigger Bootstrap modal
-              const modalElement = document.getElementById("thankYouModal");
-              if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-              }
-              // Reset form
-              $scope.formData = { name: "", email: "", message: "" };
-              // Reset errors
-              $scope.formErrors = {};
-            })
-            .finally(function () {
-              $scope.isSubmitting = false;
-            });
+        // Check if there are any validation errors
+        if (Object.keys($scope.formErrors).length > 0) {
+          return; // Stop form submission
         }
+
+        // Set submitting state
+        $scope.isSubmitting = true;
+
+        const googleScriptUrl = "https://script.google.com/macros/s/AKfycbwx5vJv3gZbj9JsGx5dZVDhfQH5nU8NseH9D2b7N1lQFhX3de3WqEaYla0Chtxy0Ryoeg/exec";
+
+        const requestData = {
+          name: $scope.formData.name,
+          email: $scope.formData.email,
+          message: $scope.formData.message,
+          submittedAt: new Date().toISOString(),
+          timestamp: new Date().toLocaleString(),
+          userAgent: navigator.userAgent,
+          platform: navigator.platform,
+        };
+
+        // Make the HTTP POST request
+        $http.post(googleScriptUrl, requestData, {
+            // It is often necessary to explicitly define the content type.
+            // Google Apps Script expects this format for JSON payloads.
+            headers: {
+              'Content-Type': 'text/plain;charset=utf-8',
+            },
+          })
+          .then(function(response) {
+            // Success callback
+            $scope.isSubmitting = false;
+            $scope.showThankYou = true;
+            $scope.formData = {}; // Clear form
+          })
+          .catch(function(error) {
+            // Error callback
+            $scope.isSubmitting = false;
+            console.error("Error submitting form:", error);
+            // Show a custom error message, as no-cors prevents reading response body
+            // so we assume a generic failure if the request promise rejects.
+            $window.alert("Failed to send message. Please try again later.");
+          });
       };
-
-      // Close the thank you popup
-      $scope.closePopup = function () {
-        $scope.showThankYou = false;
-        // Hide Bootstrap modal
-        const modal = bootstrap.Modal.getInstance(
-          document.getElementById("thankYouModal")
-        );
-        if (modal) {
-          modal.hide();
-        }
-      };
-
-      //
-
-      // Scroll-based active link
-      function scrollActive() {
-        const scrollDown = window.scrollY;
-        const sections = document.querySelectorAll("section[id]");
-        sections.forEach((current) => {
-          const sectionHeight = current.offsetHeight,
-            sectionTop = current.offsetTop - 58,
-            sectionId = current.getAttribute("id"),
-            sectionsClass = document.querySelector(
-              `.nav__menu a[href*=${sectionId}]`
-            );
-          if (sectionsClass) {
-            if (
-              scrollDown > sectionTop &&
-              scrollDown <= sectionTop + sectionHeight
-            ) {
-              sectionsClass.classList.add("active-link");
-            } else {
-              sectionsClass.classList.remove("active-link");
-            }
-          }
-        });
-      }
-      window.addEventListener("scroll", scrollActive);
-
-      // Initialize ScrollReveal
-      const sr = ScrollReveal({
-        origin: "top",
-        distance: "60px",
-        duration: 2000,
-        delay: 200,
-      });
-      sr.reveal(
-        ".home__data, .about__img, .skills__subtitle, .skills__text",
-        {}
-      );
-      sr.reveal(".home__img, .about__subtitle, .about__text, .skills__img", {
-        delay: 400,
-      });
-      sr.reveal(".home__social-icon", { interval: 200 });
-      sr.reveal(".skills__data, .work__img, .contact__input", {
-        interval: 200,
-      });
     },
   ]);
+
+// This script is responsible for managing the website's dynamic behavior,
+// such as navigation toggles, form validation, and data submission
+// to a Google Apps Script endpoint.
+document.addEventListener("DOMContentLoaded", function() {
+  const navMenu = document.getElementById("nav-menu");
+  const navToggle = document.getElementById("nav-toggle");
+  const navClose = document.getElementById("nav-close");
+
+  // Show menu
+  if (navToggle) {
+    navToggle.addEventListener("click", () => {
+      navMenu.classList.add("show-menu");
+    });
+  }
+
+  // Hide menu
+  if (navClose) {
+    navClose.addEventListener("click", () => {
+      navMenu.classList.remove("show-menu");
+    });
+  }
+
+  const navLink = document.querySelectorAll(".nav__link");
+
+  function linkAction() {
+    const navMenu = document.getElementById("nav-menu");
+    navMenu.classList.remove("show-menu");
+  }
+  navLink.forEach((n) => n.addEventListener("click", linkAction));
+
+  // Change header background on scroll
+  function scrollHeader() {
+    const nav = document.getElementById("header");
+    if (this.scrollY >= 200) nav.classList.add("scroll-header");
+    else nav.classList.remove("scroll-header");
+  }
+  $window.addEventListener("scroll", scrollHeader);
+
+  // Active link on scroll
+  function scrollActive() {
+    const sections = document.querySelectorAll("section[id]");
+    const scrollDown = $window.pageYOffset;
+
+    sections.forEach((current) => {
+      const sectionHeight = current.offsetHeight,
+        sectionTop = current.offsetTop - 58,
+        sectionId = current.getAttribute("id"),
+        sectionsClass = document.querySelector(
+          `.nav__menu a[href*=${sectionId}]`
+        );
+      if (sectionsClass) {
+        if (
+          scrollDown > sectionTop &&
+          scrollDown <= sectionTop + sectionHeight
+        ) {
+          sectionsClass.classList.add("active-link");
+        } else {
+          sectionsClass.classList.remove("active-link");
+        }
+      }
+    });
+  }
+  $window.addEventListener("scroll", scrollActive);
+
+  // Initialize ScrollReveal
+  const sr = ScrollReveal({
+    origin: "top",
+    distance: "60px",
+    duration: 2000,
+    delay: 200,
+  });
+  sr.reveal(".home__data, .about__img, .skills__subtitle, .skills__text", {});
+  sr.reveal(".home__img, .about__subtitle, .about__text, .skills__img", {
+    delay: 400,
+  });
+  sr.reveal(".home__social-icon", {
+    interval: 200
+  });
+  sr.reveal(".skills__data, .work__img, .contact__input", {
+    interval: 200,
+  });
+});
