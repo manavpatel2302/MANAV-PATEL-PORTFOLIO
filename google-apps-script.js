@@ -5,11 +5,14 @@ function doPost(e) {
   try {
     let data;
 
+    // Log the incoming request for debugging purposes
+    Logger.log("Received POST request: " + JSON.stringify(e));
+
     // Case 1: Valid POST with JSON body
     if (e && e.postData && e.postData.contents) {
       data = JSON.parse(e.postData.contents);
     }
-    // Case 2: No POST data (manual run or GET fallback) → use dummy/test values
+    // Case 2: No POST data (manual run or GET fallback) -> use dummy/test values
     else {
       data = {
         name: e && e.parameter && e.parameter.name ? e.parameter.name : "N/A",
@@ -21,6 +24,8 @@ function doPost(e) {
         platform: "Unknown",
       };
     }
+
+    Logger.log("Parsed data: " + JSON.stringify(data));
 
     // Get the active spreadsheet by ID
     const spreadsheetId = "1_mN_JP-Cd8SFQ-tmVSVzViOQvF9H_X29gzvHGOIgDrw";
@@ -63,6 +68,8 @@ function doPost(e) {
     sheet.appendRow(rowData);
     sheet.autoResizeColumns(1, rowData.length);
 
+    Logger.log("Data saved successfully.");
+
     // Success response
     return ContentService.createTextOutput(
       JSON.stringify({
@@ -72,6 +79,7 @@ function doPost(e) {
       })
     ).setMimeType(ContentService.MimeType.JSON);
   } catch (error) {
+    Logger.log("Error in doPost: " + error.toString());
     console.error("Error in doPost:", error);
 
     return ContentService.createTextOutput(
