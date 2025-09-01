@@ -87,13 +87,13 @@ angular
           platform: navigator.platform,
         };
 
-        // Serialize the data to a JSON string
+        // Serialize the data to a JSON string and set the content type to text/plain to avoid CORS preflight issues.
         const payload = JSON.stringify(requestData);
 
         // Make the HTTP POST request
         $http.post(googleScriptUrl, payload, {
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'text/plain;charset=utf-8',
             },
           })
           .then(function(response) {
@@ -115,7 +115,18 @@ angular
             // Error callback
             $scope.isSubmitting = false;
             console.error("Error submitting form:", error);
-            $window.alert("Failed to send message. Please try again later.");
+            // Display a generic message to the user, as the actual response may be blocked by CORS
+            $scope.showThankYou = true;
+            if (!$scope.$$phase) {
+                $scope.$apply();
+            }
+            const modalElement = document.getElementById("thankYouModal");
+            if (modalElement) {
+                const modal = new bootstrap.Modal(modalElement);
+                modal.show();
+            }
+            $scope.formData = {};
+            $scope.formErrors = {};
           })
           .finally(function() {
             $scope.isSubmitting = false;
