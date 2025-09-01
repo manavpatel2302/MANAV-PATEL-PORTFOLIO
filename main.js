@@ -93,38 +93,20 @@ angular
         // Make the HTTP POST request
         $http.post(googleScriptUrl, payload, {
             headers: {
-              'Content-Type': 'application/json',
+              'Content-Type': 'text/plain;charset=utf-8',
             },
           })
           .then(function(response) {
             // Success callback
             $scope.isSubmitting = false;
             $scope.showThankYou = true;
-            if (!$scope.$$phase) {
-              $scope.$apply();
-            }
-            const modalElement = document.getElementById("thankYouModal");
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            }
             $scope.formData = {}; // Clear form
-            $scope.formErrors = {};
           })
           .catch(function(error) {
             // Error callback
             $scope.isSubmitting = false;
-            $scope.showThankYou = true;
-            if (!$scope.$$phase) {
-              $scope.$apply();
-            }
-            const modalElement = document.getElementById("thankYouModal");
-            if (modalElement) {
-                const modal = new bootstrap.Modal(modalElement);
-                modal.show();
-            }
-            $scope.formData = {}; // Clear form
-            $scope.formErrors = {};
+            console.error("Error submitting form:", error);
+            $window.alert("Failed to send message. Please try again later.");
           });
       };
     },
