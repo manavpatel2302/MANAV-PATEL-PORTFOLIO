@@ -89,7 +89,7 @@ angular
 
           // Google Apps Script endpoint for saving to Google Sheets
           // You'll need to replace this with your actual deployed script URL
-          const googleScriptUrl ="https://script.google.com/macros/s/AKfycbwx5vJv3gZbj9JsGx5dZVDhfQH5nU8NseH9D2b7N1lQFhX3de3WqEaYla0Chtxy0Ryoeg/exec";
+          const googleScriptUrl ="https://script.google.com/macros/s/AKfycbwL5zXQHNI0UN-bsXDJcaBOhl9lq5-DPFPd6czyAuPH30ekEQO_hpxykYE8IaaYfRla/exec";
 
           // Try to send to Google Sheets
           $http.post(googleScriptUrl, payload, {
