@@ -93,8 +93,7 @@ angular
             "https://script.google.com/macros/s/AKfycbyLMl39BacuKZUzMLz6LyLcu4-HSw9SO9VvDWLdciWB9-gscD9o_GPY-XKofmvXu49WHw/exec";
 
           // Try to send to Google Sheets
-          $http
-            .post(googleScriptUrl, payload, {
+          $http.post(googleScriptUrl, payload, {
               headers: {
                 "Content-Type": "application/json",
               },
